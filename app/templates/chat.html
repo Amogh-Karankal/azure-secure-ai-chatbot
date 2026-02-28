@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure AI Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <header>
+            <h1>🤖 Secure AI Chatbot</h1>
+            <div class="user-info">
+                <span>👤 {{ user.preferred_username }}</span>
+                <a href="{{ url_for('clear_chat') }}" class="btn-small">Clear Chat</a>
+                <a href="{{ url_for('logout') }}" class="btn-small btn-logout">Logout</a>
+            </div>
+        </header>
+        
+        <div class="chat-messages" id="chatMessages">
+            {% if chat_history %}
+                {% for message in chat_history %}
+                <div class="message {{ message.role }}">
+                    <div class="message-content">
+                        {% if message.role == 'user' %}
+                            <strong>You:</strong>
+                        {% else %}
+                            <strong>AI:</strong>
+                        {% endif %}
+                        {{ message.content }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="welcome-message">
+                    <p>👋 Hello {{ user.name or user.preferred_username }}!</p>
+                    <p>I'm your secure AI assistant. How can I help you today?</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <form method="POST" class="chat-input">
+            <input 
+                type="text" 
+                name="message" 
+                placeholder="Type your message..." 
+                autocomplete="off"
+                required
+            >
+            <button type="submit">Send</button>
+        </form>
+        
+        <footer>
+            <p>🔒 Secured with Entra ID | Zero Trust Architecture</p>
+        </footer>
+    </div>
+    
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    </script>
+</body>
+</html>

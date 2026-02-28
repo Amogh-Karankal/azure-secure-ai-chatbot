@@ -1,0 +1,237 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #fff;
+}
+
+/* Login Page */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.login-box {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+}
+
+.login-box h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.login-box > p {
+    color: #aaa;
+    margin-bottom: 30px;
+}
+
+.login-btn {
+    display: inline-block;
+    background: #0078d4;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: background 0.3s;
+}
+
+.login-btn:hover {
+    background: #005a9e;
+}
+
+.security-info {
+    margin-top: 30px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.security-info h3 {
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.security-info ul {
+    list-style: none;
+}
+
+.security-info li {
+    padding: 5px 0;
+    font-size: 0.9rem;
+}
+
+.error {
+    background: #ff4444;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* Chat Page */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+header h1 {
+    font-size: 1.5rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.btn-small {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: background 0.3s;
+}
+
+.btn-small:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-logout {
+    background: rgba(255, 68, 68, 0.3);
+}
+
+.btn-logout:hover {
+    background: rgba(255, 68, 68, 0.5);
+}
+
+/* Chat Messages */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 0;
+}
+
+.message {
+    margin-bottom: 15px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user .message-content {
+    background: #0078d4;
+    margin-left: 20%;
+    border-radius: 15px 15px 5px 15px;
+}
+
+.message.assistant .message-content {
+    background: rgba(255, 255, 255, 0.1);
+    margin-right: 20%;
+    border-radius: 15px 15px 15px 5px;
+}
+
+.message-content {
+    padding: 15px;
+    line-height: 1.5;
+}
+
+.message-content strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.welcome-message {
+    text-align: center;
+    padding: 50px;
+    color: #aaa;
+}
+
+.welcome-message p {
+    margin: 10px 0;
+}
+
+/* Chat Input */
+.chat-input {
+    display: flex;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+}
+
+.chat-input input::placeholder {
+    color: #aaa;
+}
+
+.chat-input input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.chat-input button {
+    padding: 15px 30px;
+    border: none;
+    border-radius: 10px;
+    background: #0078d4;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.chat-input button:hover {
+    background: #005a9e;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding-top: 15px;
+    color: #666;
+    font-size: 0.85rem;
+}

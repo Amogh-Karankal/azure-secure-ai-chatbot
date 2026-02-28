@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure AI Chatbot - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>🤖 Secure AI Chatbot</h1>
+            <p>Enterprise AI Assistant with Zero Trust Security</p>
+            
+            {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <a href="{{ url_for('login') }}" class="login-btn">
+                🔐 Sign in with Microsoft
+            </a>
+            
+            <div class="security-info">
+                <h3>Security Features:</h3>
+                <ul>
+                    <li>✅ Entra ID Authentication</li>
+                    <li>✅ Multi-Factor Authentication</li>
+                    <li>✅ Zero Trust Architecture</li>
+                    <li>✅ Audit Logging</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
