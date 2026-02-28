@@ -1,0 +1,24 @@
+# Environment
+.env
+venv/
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets
+*.pem
+*.key
+
+# Logs
+*.log
+audit.log
+
+# Flask session
+flask_session/
+
+# OS files
+.DS_Store
+Thumbs.db
