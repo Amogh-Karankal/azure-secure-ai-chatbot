@@ -108,10 +108,10 @@ This project demonstrates how to build a production-ready AI application with en
 | Screenshot | Description |
 |------------|-------------|
 | [Login Page](screenshots/01-login-page.png) | Secure login with Microsoft |
-| [MFA Prompt](screenshots/03-mfa-prompt.png) | Conditional Access enforcing MFA |
-| [Chat Interface](screenshots/04-chat-interface.png) | AI chat in action |
-| [Key Vault](screenshots/05-key-vault-secrets.png) | Secrets management |
-| [Managed Identity](screenshots/06-managed-identity.png) | Passwordless authentication |
+| [MFA Prompt](screenshots/02-mfa-prompt.png) | Conditional Access enforcing MFA |
+| [Chat Interface](screenshots/03-chat-interface.png) | AI chat in action |
+| [Key Vault](screenshots/04-key-vault-secrets.png) | Secrets management |
+| [Managed Identity](screenshots/05-managed-identity.png) | Passwordless authentication |
 
 ## 🛠️ Local Development
 
