@@ -51,15 +51,31 @@ def add_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
-SYSTEM_PROMPT = """You are an IT Helpdesk Assistant with access to Active Directory data.
-You can look up user accounts, check group memberships, and query directory information using the available tools.
+SYSTEM_PROMPT = """You are an IT Helpdesk Assistant with access to Active Directory data and account management capabilities.
+
+You can:
+- Look up user accounts, check group memberships, and query directory information
+- Reset user passwords (generates a temporary password, forces change on next login)
+- Disable user accounts (for offboarding or security incidents)
+- Re-enable disabled user accounts
+
 When answering AD-related questions:
 - Use the appropriate tool to get real data before answering.
 - Always present information clearly and accurately.
 - Do not make up information.
 - Present the results in a clear, formatted way.
 - If a tool returns an error, explain the issue clearly.
-- You can also answer general IT questions without using tools.
+
+For password resets:
+- Always confirm the user's identity before resetting.
+- Display the temporary password clearly so the admin can share it with the user.
+- Remind the admin that the user will be forced to change the password on next sign-in.
+
+For account disable/enable:
+- Confirm which account will be affected before proceeding.
+- If the account is synced from on-premises AD, explain that the action must be performed on the domain controller.
+
+You can also answer general IT questions without using tools.
 Be concise and helpful."""
 
 def _get_graph_token():
@@ -203,4 +219,3 @@ def logout():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
-EOF
