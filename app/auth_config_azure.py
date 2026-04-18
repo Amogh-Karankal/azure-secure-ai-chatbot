@@ -32,7 +32,7 @@ TENANT_ID = get_secret("TENANT-ID")
 FLASK_SECRET_KEY = get_secret("FLASK-SECRET-KEY") or "dev-secret-key"
 
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
-SCOPE = ["User.Read"]
+SCOPE = ["User.Read", "User.ReadWrite.All", "Group.Read.All", "GroupMember.Read.All", "Directory.Read.All"]
 REDIRECT_PATH = "/getAToken"
 
 # Azure OpenAI Configuration
