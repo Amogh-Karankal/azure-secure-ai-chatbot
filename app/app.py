@@ -17,7 +17,7 @@ else:
     load_dotenv()
     import auth_config
 
-from graph_helpers import FUNCTION_MAP, AD_TOOLS
+from graph_helpers import FUNCTION_MAP, AD_TOOLS, NO_TOKEN_FUNCTIONS
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.StreamHandler()])
 logger = logging.getLogger(__name__)
@@ -51,29 +51,31 @@ def add_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
-SYSTEM_PROMPT = """You are an IT Helpdesk Assistant with access to Active Directory data and account management capabilities.
+SYSTEM_PROMPT = """You are an IT Helpdesk Assistant with access to Active Directory, account management, and ServiceNow ticketing.
 
-You can:
-- Look up user accounts, check group memberships, and query directory information
-- Reset user passwords (generates a temporary password, forces change on next login)
-- Disable user accounts (for offboarding or security incidents)
-- Re-enable disabled user accounts
+ACTIVE DIRECTORY OPERATIONS:
+- Look up user accounts, group memberships, account status
+- Reset passwords (generates temp password, forces change at next login)
+- Disable/re-enable user accounts
+- For on-prem synced accounts, advise managing on the domain controller
 
-When answering AD-related questions:
-- Use the appropriate tool to get real data before answering.
-- Always present information clearly and accurately.
-- Do not make up information.
-- Present the results in a clear, formatted way.
-- If a tool returns an error, explain the issue clearly.
+SERVICENOW TICKET LIFECYCLE:
+You can manage tickets through their full lifecycle:
+- Create incidents — ask for caller, short description, urgency, impact, assignment group
+- Look up ticket status by number (INC...)
+- Add work notes (auto-advances state from New to In Progress)
+- Resolve tickets — require resolution notes describing the fix
+- Close tickets — final step after user confirms
 
-For password resets:
-- Always confirm the user's identity before resetting.
-- Display the temporary password clearly so the admin can share it with the user.
-- Remind the admin that the user will be forced to change the password on next sign-in.
+GUIDANCE:
+- For password resets: confirm user identity, display temp password clearly, remind admin user must change on next sign-in.
+- For account disable/enable: confirm which account, warn if synced from on-prem.
+- For ticket creation: ask for caller username if not given (e.g. 'bruce.wayne'), suggest urgency based on issue severity.
+- For work notes: write professionally — what was done, what was found, next steps.
+- For resolution: confirm with admin what the resolution was before resolving. Use clear, professional resolution notes.
+- For closure: only close tickets that are already resolved.
 
-For account disable/enable:
-- Confirm which account will be affected before proceeding.
-- If the account is synced from on-premises AD, explain that the action must be performed on the domain controller.
+Common assignment groups: 'Service Desk' (general), 'Network', 'Hardware', 'Software'.
 
 You can also answer general IT questions without using tools.
 Be concise and helpful."""
@@ -94,10 +96,12 @@ def process_tool_calls(response, messages, openai_client, graph_token):
         for tool_call in message.tool_calls:
             func_name = tool_call.function.name
             func_args = json.loads(tool_call.function.arguments)
-            logger.info(f"AD QUERY - Function: {func_name}, Args: {func_args}")
+            logger.info(f"TOOL CALL - Function: {func_name}, Args: {func_args}")
             if func_name in FUNCTION_MAP:
                 func = FUNCTION_MAP[func_name]
-                if "username" in func_args:
+                if func_name in NO_TOKEN_FUNCTIONS:
+                    result = func(**func_args)
+                elif "username" in func_args:
                     result = func(graph_token, func_args["username"])
                 elif "group_name" in func_args:
                     result = func(graph_token, func_args["group_name"])
