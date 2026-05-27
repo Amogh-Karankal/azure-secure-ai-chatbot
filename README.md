@@ -35,7 +35,7 @@ A production-ready AI application with enterprise security controls. The chatbot
 - Full helpdesk flow from "user reports issue" to "ticket closed" — all conversationally
 
 ## 🏗️ Architecture
-
+![Architecture](diagrams/architecture.png)
 
 
 ## 🔍 Integration Details
