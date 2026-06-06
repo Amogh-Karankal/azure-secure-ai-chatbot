@@ -17,7 +17,7 @@ else:
     load_dotenv()
     import auth_config
 
-from graph_helpers import FUNCTION_MAP, AD_TOOLS, NO_TOKEN_FUNCTIONS
+from graph_helpers import FUNCTION_MAP, AD_TOOLS, NO_TOKEN_FUNCTIONS, WRITE_FUNCTIONS, check_admin_membership
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.StreamHandler()])
 logger = logging.getLogger(__name__)
@@ -53,32 +53,30 @@ def add_security_headers(response):
 
 SYSTEM_PROMPT = """You are an IT Helpdesk Assistant with access to Active Directory, account management, and ServiceNow ticketing.
 
+ACCESS LEVELS:
+- The backend system automatically enforces permissions. ALWAYS attempt the operation the user requests by calling the appropriate tool.
+- Do NOT pre-judge whether a user has permission. Call the tool and let the system respond.
+- If the system returns a "permission_denied" error, then explain to the user that they need admin privileges and should contact their IT administrator.
+- Never refuse a write operation without first calling the tool.
+
 ACTIVE DIRECTORY OPERATIONS:
-- Look up user accounts, group memberships, account status
-- Reset passwords (generates temp password, forces change at next login)
-- Disable/re-enable user accounts
+- Look up user accounts, group memberships, account status (all users)
+- Reset passwords, disable/re-enable accounts (admin only)
 - For on-prem synced accounts, advise managing on the domain controller
 
-SERVICENOW TICKET LIFECYCLE:
-You can manage tickets through their full lifecycle:
-- Create incidents — ask for caller, short description, urgency, impact, assignment group
-- Look up ticket status by number (INC...)
-- Add work notes (auto-advances state from New to In Progress)
-- Resolve tickets — require resolution notes describing the fix
-- Close tickets — final step after user confirms
+SERVICENOW TICKETING:
+- Look up ticket status (all users)
+- Create tickets, add work notes, resolve, close (admin only)
+- Ask for caller username if not given, suggest urgency based on severity
+- Common assignment groups: 'Service Desk', 'Network', 'Hardware', 'Software'
+- Valid resolution codes: 'Solution provided', 'Workaround provided', 'Resolved by caller', etc.
 
 GUIDANCE:
-- For password resets: confirm user identity, display temp password clearly, remind admin user must change on next sign-in.
-- For account disable/enable: confirm which account, warn if synced from on-prem.
-- For ticket creation: ask for caller username if not given (e.g. 'bruce.wayne'), suggest urgency based on issue severity.
-- For work notes: write professionally — what was done, what was found, next steps.
-- For resolution: confirm with admin what the resolution was before resolving. Use clear, professional resolution notes.
-- For closure: only close tickets that are already resolved.
+- For password resets: confirm identity, display temp password, remind user must change at next sign-in.
+- For account changes: confirm which account, warn if synced from on-prem.
+- When an operation is blocked due to permissions, be polite and clear about why.
 
-Common assignment groups: 'Service Desk' (general), 'Network', 'Hardware', 'Software'.
-
-You can also answer general IT questions without using tools.
-Be concise and helpful."""
+You can also answer general IT questions. Be concise and helpful."""
 
 def _get_graph_token():
     try:
@@ -89,15 +87,23 @@ def _get_graph_token():
         logger.error(f"Failed to get Graph token: {e}")
     return None
 
-def process_tool_calls(response, messages, openai_client, graph_token):
+def process_tool_calls(response, messages, openai_client, graph_token, is_admin):
     message = response.choices[0].message
     while message.tool_calls:
         messages.append(message)
         for tool_call in message.tool_calls:
             func_name = tool_call.function.name
             func_args = json.loads(tool_call.function.arguments)
-            logger.info(f"TOOL CALL - Function: {func_name}, Args: {func_args}")
-            if func_name in FUNCTION_MAP:
+            logger.info(f"TOOL CALL - Function: {func_name}, Args: {func_args}, Admin: {is_admin}")
+
+            # RBAC enforcement — block write operations for non-admins
+            if func_name in WRITE_FUNCTIONS and not is_admin:
+                logger.warning(f"ACCESS DENIED - Non-admin attempted write operation: {func_name}")
+                result = {
+                    "error": "Access denied. This operation requires administrator privileges. You have read-only access. Please contact your IT administrator to perform this action.",
+                    "permission_denied": True
+                }
+            elif func_name in FUNCTION_MAP:
                 func = FUNCTION_MAP[func_name]
                 if func_name in NO_TOKEN_FUNCTIONS:
                     result = func(**func_args)
@@ -109,6 +115,7 @@ def process_tool_calls(response, messages, openai_client, graph_token):
                     result = func(graph_token)
             else:
                 result = {"error": f"Unknown function: {func_name}"}
+
             messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": json.dumps(result)})
         response = openai_client.chat.completions.create(model=auth_config.AZURE_OPENAI_DEPLOYMENT, messages=messages, tools=AD_TOOLS, max_tokens=1000, temperature=0.3)
         message = response.choices[0].message
@@ -171,7 +178,12 @@ def authorized():
         session["user"] = result.get("id_token_claims")
         session["token_cache"] = cache.serialize()
         username = session["user"].get("preferred_username", "unknown")
-        logger.info(f"LOGIN SUCCESS - User: {username}")
+
+        # RBAC — determine admin status from group membership at login
+        graph_token = result.get("access_token")
+        is_admin = check_admin_membership(graph_token) if graph_token else False
+        session["is_admin"] = is_admin
+        logger.info(f"LOGIN SUCCESS - User: {username} - Admin: {is_admin}")
     return redirect(url_for("index"))
 
 @app.route("/chat", methods=["GET", "POST"])
@@ -180,11 +192,12 @@ def chat():
         return redirect(url_for("index"))
     user = session["user"]
     username = user.get("preferred_username", "unknown")
+    is_admin = session.get("is_admin", False)
     if request.method == "POST":
         user_message = request.form.get("message", "").strip()
         if user_message:
             add_to_chat_history("user", user_message)
-            logger.info(f"CHAT INPUT - User: {username} - Message: {user_message[:100]}...")
+            logger.info(f"CHAT INPUT - User: {username} (Admin: {is_admin}) - Message: {user_message[:100]}...")
             try:
                 openai_client = get_openai_client()
                 graph_token = _get_graph_token()
@@ -192,7 +205,7 @@ def chat():
                 messages.extend(get_chat_history())
                 response = openai_client.chat.completions.create(model=auth_config.AZURE_OPENAI_DEPLOYMENT, messages=messages, tools=AD_TOOLS if graph_token else None, max_tokens=1000, temperature=0.3)
                 if response.choices[0].message.tool_calls and graph_token:
-                    assistant_message = process_tool_calls(response, messages, openai_client, graph_token)
+                    assistant_message = process_tool_calls(response, messages, openai_client, graph_token, is_admin)
                 else:
                     assistant_message = response.choices[0].message.content
                 if not assistant_message:
@@ -203,7 +216,7 @@ def chat():
                 logger.error(f"OpenAI Error - User: {username} - Error: {str(e)}")
                 error_msg = f"Sorry, an error occurred: {str(e)}"
                 add_to_chat_history("assistant", error_msg)
-    return render_template("chat.html", user=user, chat_history=get_chat_history())
+    return render_template("chat.html", user=user, chat_history=get_chat_history(), is_admin=is_admin)
 
 @app.route("/clear")
 def clear_chat():
